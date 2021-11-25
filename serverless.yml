@@ -1,0 +1,68 @@
+service: workshop-${self:custom.name}
+
+custom:
+  name: narayan
+  export-env:
+    overwrite: true
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ap-south-1
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action: dynamodb:scan
+      Resource: !GetAtt RestaurantsTable.Arn
+    - Effect: Allow
+      Action: execute-api:Invoke
+      Resource: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/${self:provider.stage}/GET/restaurants
+
+functions:
+  get-index:
+    handler: functions/get-index.handler
+    events:
+      - http:
+          path: /
+          method: get
+    environment:
+      restaurants_api: !Sub https://${ApiGatewayRestApi}.execute-api.${AWS::Region}.amazonaws.com/${self:provider.stage}/restaurants
+
+  get-restaurants:
+    handler: functions/get-restaurants.handler
+    events:
+      - http:
+          path: /restaurants
+          method: get
+          authorize: aws_iam
+    environment:
+      restaurants_table: !Ref RestaurantsTable
+
+  search-restaurants:
+    handler: functions/search-restaurants.handler
+    events:
+      - http:
+          path: /restaurants/search
+          method: post
+    environment:
+      restaurants_table: !Ref RestaurantsTable
+
+resources:
+  Resources:
+    RestaurantsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: name
+            AttributeType: S
+        KeySchema:
+          - AttributeName: name
+            KeyType: HASH
+
+  Outputs:
+    RestaurantsTableName:
+      Value: !Ref RestaurantsTable
+
+plugins:
+  - serverless-export-env
