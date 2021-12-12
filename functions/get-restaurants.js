@@ -10,12 +10,10 @@ const getRestaurants = async count => {
     TableName: tableName,
     Limit: count
   }
-  console.log(`req - ${JSON.stringify(req)}`)
-  console.log(`env - ${JSON.stringify(process.env)}`)
+
   const resp = await dynamodb.scan(req).promise()
-  console.log(`response - ${JSON.stringify(resp)}`)
-  console.log(`found ${resp?.Items?.length} restaurants`)
-  return resp?.Items
+  console.log(`found ${resp.Items.length} restaurants`)
+  return resp.Items
 }
 
 module.exports.handler = async (event, context) => {
