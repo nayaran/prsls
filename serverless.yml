@@ -9,6 +9,8 @@ provider:
   name: aws
   runtime: nodejs12.x
   region: ap-south-1
+  eventBridge:
+    useCloudFormation: true
 
   iamRoleStatements:
     - Effect: Allow
@@ -25,6 +27,9 @@ provider:
     - Effect: Allow
       Action: events:PutEvents
       Resource: !GetAtt EventBus.Arn
+    - Effect: Allow
+      Action: sns:Publish
+      Resource: !Ref RestaurantNotificationTopic
 
   environment:
     rest_api_url:
@@ -95,6 +100,20 @@ functions:
             arn: !GetAtt CognitoUserPool.Arn
     environment:
       bus_name: !Ref EventBus
+
+  notify-restaurant:
+    handler: functions/notify-restaurant.handler
+    events:
+    - eventBridge:
+        eventBus: !Ref EventBus
+        pattern:
+          source:
+            - big-mouth
+          detail-type:
+            - order_placed
+    environment:
+      bus_name: !Ref EventBus
+      restaurant_notification_topic: !Ref RestaurantNotificationTopic
 
 resources:
   Resources:
@@ -181,6 +200,9 @@ resources:
       Properties:
         Name: order_events_${self:provider.stage}
 
+    RestaurantNotificationTopic:
+      Type: AWS::SNS::Topic
+
   Outputs:
     RestaurantsTableName:
       Value: !Ref RestaurantsTable
@@ -199,6 +221,12 @@ resources:
 
     EventBusName:
       Value: !Ref EventBus
+
+    RestaurantNotificationTopicName:
+      Value: !GetAtt RestaurantNotificationTopic.TopicName
+
+    RestaurantNotificationTopicArn:
+      Value: !Ref RestaurantNotificationTopic
 
 plugins:
   - serverless-export-env
