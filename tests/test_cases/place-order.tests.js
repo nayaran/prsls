@@ -1,6 +1,6 @@
 const when = require('../steps/when')
 const given = require('../steps/given')
-const tearDown = require('../steps/tearDown')
+const teardown = require('../steps/teardown')
 const { init } = require('../steps/init')
 const AWS = require('aws-sdk')
 
@@ -16,7 +16,8 @@ describe('Given an authenticated user', () => {
   })
 
   afterAll(async () => {
-    await tearDown.an_authenticated_user(user)
+    console.log("tearing down")
+    await teardown.an_authenticated_user(user)
   })
 
   describe(`When we invoke the POST /orders endpoint`, () => {
