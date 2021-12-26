@@ -10,6 +10,10 @@ custom:
       - CognitoUserPoolServerClientId
     output:
       file: ./.env-outputs
+  stage: ${opt:stage, self:provider.stage}
+  logLevel:
+    prod: INFO
+    default: DEBUG
 
 provider:
   name: aws
@@ -24,9 +28,10 @@ provider:
         - ''
         - - https://
           - !Ref ApiGatewayRestApi
-          - .execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}
+          - .execute-api.${self:provider.region}.amazonaws.com/${self:custom.stage}
     serviceName: ${self:service}
-    stage: ${self:provider.stage}
+    stage: ${self:custom.stage}
+    LOG_LEVEL: ${self:custom.logLevel.${self:custom.stage}, self:custom.logLevel.default}
 
 functions:
   get-index:
@@ -41,7 +46,7 @@ functions:
           - ''
           - - https://
             - !Ref ApiGatewayRestApi
-            - .execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}/restaurants
+            - .execute-api.${self:provider.region}.amazonaws.com/${self:custom.stage}/restaurants
       cognito_user_pool_id: !Ref CognitoUserPool
       cognito_client_id: !Ref WebCognitoUserPoolClient
       orders_api:
@@ -49,11 +54,11 @@ functions:
           - ''
           - - https://
             - !Ref ApiGatewayRestApi
-            - .execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}/orders
+            - .execute-api.${self:provider.region}.amazonaws.com/${self:custom.stage}/orders
     iamRoleStatements:
       - Effect: Allow
         Action: execute-api:Invoke
-        Resource: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/${self:provider.stage}/GET/restaurants
+        Resource: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/${self:custom.stage}/GET/restaurants
 
   get-restaurants:
     handler: functions/get-restaurants.handler
@@ -70,7 +75,7 @@ functions:
         Resource: !GetAtt RestaurantsTable.Arn
       - Effect: Allow
         Action: ssm:GetParameters*
-        Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${self:service}/${self:provider.stage}/get-restaurants/config
+        Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${self:service}/${self:custom.stage}/get-restaurants/config
 
   search-restaurants:
     handler: functions/search-restaurants.handler
@@ -92,8 +97,8 @@ functions:
       - Effect: Allow
         Action: ssm:GetParameters*
         Resource:
-          - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${self:service}/${self:provider.stage}/search-restaurants/config
-          - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${self:service}/${self:provider.stage}/search-restaurants/secretString
+          - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${self:service}/${self:custom.stage}/search-restaurants/config
+          - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${self:service}/${self:custom.stage}/search-restaurants/secretString
 
 
   place-order:
@@ -209,17 +214,17 @@ resources:
       Type: AWS::SSM::Parameter
       Properties:
         Type: String
-        Name: /${self:service}/${self:provider.stage}/serviceUrl
+        Name: /${self:service}/${self:custom.stage}/serviceUrl
         Value:
           Fn::Join:
             - ''
             - - https://
               - !Ref ApiGatewayRestApi
-              - .execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}
+              - .execute-api.${self:provider.region}.amazonaws.com/${self:custom.stage}
     EventBus:
       Type: AWS::Events::EventBus
       Properties:
-        Name: order_events_${self:provider.stage}
+        Name: order_events_${self:custom.stage}
 
     RestaurantNotificationTopic:
       Type: AWS::SNS::Topic
@@ -293,7 +298,7 @@ resources:
   Conditions:
     IsE2eTest:
       Fn::Equals:
-        - ${self:provider.stage}
+        - ${self:custom.stage}
         - dev
 
   Outputs:
