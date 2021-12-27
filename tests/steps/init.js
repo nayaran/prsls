@@ -13,6 +13,7 @@ const init = async () => {
   }
 
   const { credentials, region } = await promisify(awscred.load)()
+  console.error = jest.fn()
 
   process.env.AWS_ACCESS_KEY_ID = credentials.accessKeyId
   process.env.AWS_SECRET_ACCESS_KEY = credentials.secretAccessKey

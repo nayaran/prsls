@@ -9,6 +9,9 @@ jobs:
     steps:
       - checkout
       - node/with-cache:
+          cache-version: v4
+          cache-key: package-lock.json
+          use-strict-cache: true
           steps:
             - run: npm ci
             - run: npm run test # run our integration tests
@@ -18,25 +21,33 @@ jobs:
     steps:
       - checkout
       - node/with-cache:
+          cache-version: v4
+          cache-key: package-lock.json
+          use-strict-cache: true
           steps:
-            - run: npx sls deploy
+            - run: npx sls deploy --verbose
+
   acceptance-test:
     docker:
       - image: circleci/node
     steps:
       - checkout
       - node/with-cache:
+          cache-version: v4
+          cache-key: package-lock.json
+          use-strict-cache: true
           steps:
+            - run: npm ci
             - run: npm run acceptance
 
 workflows:
   version: 2
   dev:
     jobs:
-      - integration-test
-      - deploy:
-          requires:
-            - integration-test
-      - acceptance-test:
+      - deploy
+      - integration-test:
           requires:
             - deploy
+      - acceptance-test:
+          requires:
+            - integration-test
