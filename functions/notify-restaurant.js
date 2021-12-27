@@ -1,4 +1,3 @@
-const EventBridge = require('aws-sdk/clients/eventbridge')
 const XRay = require('aws-xray-sdk-core')
 const SNS = require('aws-sdk/clients/sns')
 const Log = require('@dazn/lambda-powertools-logger')
@@ -7,7 +6,9 @@ const wrap = require('@dazn/lambda-powertools-pattern-basic')
 const busName = process.env.bus_name
 const topicArn = process.env.restaurant_notification_topic
 
-const eventBridge = XRay.captureAWSClient(new EventBridge())
+const eventBridge = XRay.captureAWSClient(
+  require('@dazn/lambda-powertools-eventbridge-client')
+)
 const sns = XRay.captureAWSClient(new SNS())
 
 module.exports.handler = wrap(async event => {
@@ -19,7 +20,7 @@ module.exports.handler = wrap(async event => {
   await sns.publish(snsReq).promise()
 
   const { restaurantName, orderId } = order
-  Log.debug(`notified restaurant `, {restaurantName, orderId})
+  Log.debug('notified restaurant')
 
   await eventBridge
     .putEvents({

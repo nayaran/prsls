@@ -61,7 +61,14 @@ const waitForMessage = (sourceType, source, message) => {
     .pipe(
       filter(incomingMessage => incomingMessage.sourceType === sourceType),
       filter(incomingMessage => incomingMessage.source === source),
-      filter(incomingMessage => incomingMessage.message === message),
+      filter(incomingMessage => {
+        incoming = JSON.parse(incomingMessage.message)
+        given = JSON.parse(message)
+        return incoming["source"] === given["source"] 
+                && incoming["detail-type"] === given["detail-type"] 
+                && incoming["orderId"] === given["orderId"] 
+                && incoming["restaurantName"] === given["restaurantName"]
+      }),
       take(1)
     )
     .toPromise()

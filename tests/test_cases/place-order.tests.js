@@ -30,7 +30,7 @@ describe('Given an authenticated user', () => {
 
     it(`Should publish a message to EventBridge bus`, async () => {
       const { orderId } = resp.body
-
+      console.log(`Waiting for message in eventbridge - ${process.env.bus_name}`)
       await messages.waitForMessage(
         'eventbridge',
         process.env.bus_name,
